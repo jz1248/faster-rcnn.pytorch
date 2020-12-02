@@ -14,6 +14,7 @@ from torch.autograd import Variable
 import math
 import torchvision.models as models
 from model.faster_rcnn.faster_rcnn import _fasterRCNN
+from model.utils.config import cfg
 import pdb
 
 class vgg16(_fasterRCNN):
@@ -34,8 +35,12 @@ class vgg16(_fasterRCNN):
 
     vgg.classifier = nn.Sequential(*list(vgg.classifier._modules.values())[:-1])
 
+    self.input_conv = nn.Conv2d(cfg.INPUT_CHANNEL, 3, (1, 1))
+
+    self.input_conv.weight.data.zero_().normal_(0, 0.01)
+
     # not using the last maxpool layer
-    self.RCNN_base = nn.Sequential(*list(vgg.features._modules.values())[:-1])
+    self.RCNN_base = nn.Sequential(self.input_conv, *list(vgg.features._modules.values())[:-1])
 
     # Fix the layers before conv3:
     for layer in range(10):
@@ -51,7 +56,8 @@ class vgg16(_fasterRCNN):
     if self.class_agnostic:
       self.RCNN_bbox_pred = nn.Linear(4096, 4)
     else:
-      self.RCNN_bbox_pred = nn.Linear(4096, 4 * self.n_classes)      
+      self.RCNN_bbox_pred = nn.Linear(4096, 4 * self.n_classes)
+
 
   def _head_to_tail(self, pool5):
     

@@ -163,7 +163,7 @@ class roibatchLoader(data.Dataset):
             trim_size = int(np.floor(data_width / ratio))
 
             padding_data = torch.FloatTensor(int(np.ceil(data_width / ratio)), \
-                                             data_width, 3).zero_()
+                                             data_width, 4).zero_()
 
             padding_data[:data_height, :, :] = data[0]
             # update im_info
@@ -173,12 +173,12 @@ class roibatchLoader(data.Dataset):
             # this means that data_width > data_height
             # if the image need to crop.
             padding_data = torch.FloatTensor(data_height, \
-                                             int(np.ceil(data_height * ratio)), 3).zero_()
+                                             int(np.ceil(data_height * ratio)), 4).zero_()
             padding_data[:, :data_width, :] = data[0]
             im_info[0, 1] = padding_data.size(1)
         else:
             trim_size = min(data_height, data_width)
-            padding_data = torch.FloatTensor(trim_size, trim_size, 3).zero_()
+            padding_data = torch.FloatTensor(trim_size, trim_size, 4).zero_()
             padding_data = data[0][:trim_size, :trim_size, :]
             # gt_boxes.clamp_(0, trim_size)
             gt_boxes[:, :4].clamp_(0, trim_size)
@@ -204,7 +204,7 @@ class roibatchLoader(data.Dataset):
 
         return padding_data, im_info, gt_boxes_padding, num_boxes
     else:
-        data = data.permute(0, 3, 1, 2).contiguous().view(3, data_height, data_width)
+        data = data.permute(0, 3, 1, 2).contiguous().view(cfg.INPUT_CHANNEL, data_height, data_width)
         im_info = im_info.view(3)
 
         gt_boxes = torch.FloatTensor([1,1,1,1,1])

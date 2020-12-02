@@ -15,6 +15,7 @@ import argparse
 import pprint
 import pdb
 import time
+import random
 
 import torch
 from torch.autograd import Variable
@@ -155,7 +156,7 @@ if __name__ == '__main__':
   if args.dataset == "pascal_voc":
       args.imdb_name = "voc_2007_trainval"
       args.imdbval_name = "voc_2007_test"
-      args.set_cfgs = ['ANCHOR_SCALES', '[8, 16, 32]', 'ANCHOR_RATIOS', '[0.5,1,2]', 'MAX_NUM_GT_BOXES', '20']
+      args.set_cfgs = ['ANCHOR_SCALES', '[8, 16, 32]', 'ANCHOR_RATIOS', '[0.5,1,2]', 'MAX_NUM_GT_BOXES', '340']
   elif args.dataset == "pascal_voc_0712":
       args.imdb_name = "voc_2007_trainval+voc_2012_trainval"
       args.imdbval_name = "voc_2007_test"
@@ -185,6 +186,7 @@ if __name__ == '__main__':
   print('Using config:')
   pprint.pprint(cfg)
   np.random.seed(cfg.RNG_SEED)
+  random.seed(cfg.RNG_SEED)
 
   #torch.backends.cudnn.benchmark = True
   if torch.cuda.is_available() and not args.cuda:
@@ -192,7 +194,7 @@ if __name__ == '__main__':
 
   # train set
   # -- Note: Use validation set and disable the flipped to enable faster loading.
-  cfg.TRAIN.USE_FLIPPED = True
+  cfg.TRAIN.USE_FLIPPED = False
   cfg.USE_GPU_NMS = args.cuda
   imdb, roidb, ratio_list, ratio_index = combined_roidb(args.imdb_name)
   train_size = len(roidb)
@@ -232,6 +234,8 @@ if __name__ == '__main__':
 
   if args.cuda:
     cfg.CUDA = True
+
+  torch.autograd.set_detect_anomaly(True)
 
   # initilize the network here.
   if args.net == 'vgg16':
@@ -369,17 +373,17 @@ if __name__ == '__main__':
         loss_temp = 0
         start = time.time()
 
-    
-    save_name = os.path.join(output_dir, 'faster_rcnn_{}_{}_{}.pth'.format(args.session, epoch, step))
-    save_checkpoint({
-      'session': args.session,
-      'epoch': epoch + 1,
-      'model': fasterRCNN.module.state_dict() if args.mGPUs else fasterRCNN.state_dict(),
-      'optimizer': optimizer.state_dict(),
-      'pooling_mode': cfg.POOLING_MODE,
-      'class_agnostic': args.class_agnostic,
-    }, save_name)
-    print('save model: {}'.format(save_name))
+    if epoch % 5 == 0:
+        save_name = os.path.join(output_dir, 'faster_rcnn_{}_{}_{}.pth'.format(args.session, epoch, step))
+        save_checkpoint({
+          'session': args.session,
+          'epoch': epoch + 1,
+          'model': fasterRCNN.module.state_dict() if args.mGPUs else fasterRCNN.state_dict(),
+          'optimizer': optimizer.state_dict(),
+          'pooling_mode': cfg.POOLING_MODE,
+          'class_agnostic': args.class_agnostic,
+        }, save_name)
+        print('save model: {}'.format(save_name))
 
   if args.use_tfboard:
     logger.close()

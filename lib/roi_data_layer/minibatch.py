@@ -16,6 +16,8 @@ from scipy.misc import imread
 from model.utils.config import cfg
 from model.utils.blob import prep_im_for_blob, im_list_to_blob
 import pdb
+import tifffile as tifl
+
 def get_minibatch(roidb, num_classes):
   """Given a roidb, construct a minibatch sampled from it."""
   num_images = len(roidb)
@@ -63,14 +65,15 @@ def _get_image_blob(roidb, scale_inds):
   im_scales = []
   for i in range(num_images):
     #im = cv2.imread(roidb[i]['image'])
-    im = imread(roidb[i]['image'])
+    #im = imread(roidb[i]['image'])
+    im = tifl.imread(roidb[i]['image'])
 
     if len(im.shape) == 2:
       im = im[:,:,np.newaxis]
       im = np.concatenate((im,im,im), axis=2)
     # flip the channel, since the original one using cv2
     # rgb -> bgr
-    im = im[:,:,::-1]
+    # im = im[:,:,::-1]  # ignore it since the image is in tiff format and not RGB image.
 
     if roidb[i]['flipped']:
       im = im[:, ::-1, :]
